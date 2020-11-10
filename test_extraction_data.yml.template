@@ -41,3 +41,4 @@ extractors:
     extractor: ncsa.image.ocr
     output: '"ocr_text": "The BrownDog project"'
     matcher: 'str'
+
