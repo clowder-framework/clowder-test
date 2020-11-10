@@ -34,17 +34,28 @@ def processing_timeout(request):
 
 @pytest.fixture
 def mongo_host(request):
-    return request.config.getoption("--mongo_host")
+    mongo = ""
+    with open("test_extraction_data.yml", 'r') as f:
+        iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
+        mongo = iterations['mongo']['url']
+    return mongo
 
 
 @pytest.fixture
 def mongo_db(request):
-    return request.config.getoption("--mongo_db")
-
+    db = ""
+    with open("test_extraction_data.yml", 'r') as f:
+        iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
+        db = iterations['mongo']['database']
+    return db
 
 @pytest.fixture
 def mongo_collection(request):
-    return request.config.getoption("--mongo_collection")
+    collection = ""
+    with open("test_extraction_data.yml", 'r') as f:
+        iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
+        collection = iterations['mongo']['collection']
+    return collection
 
 
 @pytest.fixture
