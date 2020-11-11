@@ -34,11 +34,11 @@ def processing_timeout(request):
 
 @pytest.fixture
 def mongo_host(request):
-    mongo = ""
+    host = ""
     with open("test_extraction_data.yml", 'r') as f:
         iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
-        mongo = iterations['mongo']['url']
-    return mongo
+        host = iterations['mongo']['host']
+    return host
 
 
 @pytest.fixture

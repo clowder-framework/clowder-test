@@ -1,0 +1,13 @@
+FROM ubuntu:20.04
+
+COPY test_extraction_data.yml clowder-test.sh *.py requirements.txt /
+
+RUN apt-get update &&\
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    python3 \
+    python3-pip \
+    python-is-python3 && \
+    pip3 install -r /requirements.txt && \
+    rm -rf /var/lib/apt/lists/*
+
+CMD ["sh", "/clowder-test.sh"]

@@ -35,7 +35,7 @@
         var div = $('#result');
         div.empty();
 
-        var url = "bd.php";
+        var url = "clowder.php";
         var options = {"expand": "all"};
         options['id'] = getParameterByName("id", "0");
         $.getJSON(url, options, function (results) {

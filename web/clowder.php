@@ -14,10 +14,10 @@
   }
 
   $options = array("limit" => $limit, "sort" => array("date" => -1));
-
-  $manager = new MongoDB\Driver\Manager("mongodb://mongo.ncsa.illinois.edu:27017");
+  $host = getenv('HOST');
+  $manager = new MongoDB\Driver\Manager("mongodb://$host:27017");
   $query = new MongoDB\Driver\Query($filter, $options);
-  $cursor = $manager->executeQuery("browndog.test_results", $query);
+  $cursor = $manager->executeQuery("clowder-test.test_results", $query);
   $cursor->setTypeMap(['root' => 'array', 'document' => 'array', 'array' => 'array']);
 
   header("Access-Control-Allow-Origin: *");

@@ -22,7 +22,7 @@
 
     $('#tests').on('change', showData);
 
-    var url = makeURL("bd.php");
+    var url = makeURL("clowder.php");
     $.get(url, loadData);
 
     function loadData(rawdata) {
