@@ -21,11 +21,23 @@ mongo:
   database:
   collection:
 
-watchers:
-  - name: Dev Null
-    address: devnull@ncsa.illinois.edu
-    get_success: true
-    get_failure: true
+notifications:
+  console:
+    - stdout: true
+  email:
+    - name: Dev Null
+      email: devnull@ncsa.illinois.edu
+      notify: <failures,successes,both>
+  slack:
+    - name: slack
+      SLACK_URL: https://hooks.slack.com/services/${SLACK_TOKEN}
+      SLACK_CHANNEL: channel name
+      SLACK_USER: Clowder-test
+      notify: <failures,successes,both>
+  msteams:
+    - name: msteams
+      MSTEAM_URL: msteam url
+      notify: <failures,successes,both>
 
 extractors:
   -

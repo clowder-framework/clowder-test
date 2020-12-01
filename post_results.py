@@ -4,6 +4,8 @@ import re
 import ruamel.yaml
 import socket
 import xmltodict
+import requests
+import json
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -19,11 +21,20 @@ servertype = ""
 requesttimeout = 5
 processingtimeout = 300
 
+slacktoken = ""
+slackchannel = ""
+slackuser = ""
+slacknotify = ""
+slackurl = ""
+
+msteamurl = ""
+msteamnotify = ""
+
 def main():
     with open(args.junitxml) as fd:
         host = socket.gethostname()
         doc = xmltodict.parse(fd.read())
-        test_groups = {'total': int(doc['testsuites']['testsuite']['@tests']), 'clowder': 0, 'polyglot': 0, 'fence': 0}
+        test_groups = {'total': int(doc['testsuites']['testsuite']['@tests']), 'clowder': 0}
         elapsed_time = float(doc['testsuites']['testsuite']['@time'])
         log = {'errors': list(), 'failures': list(), 'timeouts': list(), 'skipped': list(), 'success': list()}
         processing_timeout = int(processingtimeout)
@@ -84,18 +95,14 @@ def main():
             if msgtype == 'errors' or msgtype == 'failures' or msgtype == 'timeouts':
                 if 'test_extraction' in testcase['@classname']:
                     test_groups['clowder'] += 1
-                elif 'test_conversion' in testcase['@classname']:
-                    test_groups['polyglot'] += 1
-                elif 'test_input_output_graph' in testcase['@classname']:
-                    test_groups['polyglot'] += 1
-                else:
-                    test_groups['fence'] += 1
 
             log[msgtype].append(logmsg)
 
         mongoid = report_mongo(host, test_groups, elapsed_time, log)
         report_console(host, test_groups, elapsed_time, log, mongoid)
         report_email(host, test_groups, elapsed_time, log, mongoid)
+        report_slack(host, test_groups, elapsed_time, log)
+        report_msteam(host, test_groups, elapsed_time, log)
 
 
 def report_console(host, test_groups, elapsed_time, log, mongoid):
@@ -111,9 +118,7 @@ def report_console(host, test_groups, elapsed_time, log, mongoid):
         message += "Timeouts       : %d\n" % len(log['timeouts'])
         message += "Skipped         : %d\n" % len(log['skipped'])
         message += "Success         : %d\n" % len(log['success'])
-        message += "Fence Broken    : %d\n" % test_groups['fence']
         message += "Clowder Broken  : %d\n" % test_groups['clowder']
-        message += "Polyglot Broken : %d\n" % test_groups['polyglot']
         message += "Elapsed time    : %5.2f seconds\n" % elapsed_time
         message += '\n'
         if len(log['failures']) > 0:
@@ -170,9 +175,7 @@ def report_email(host, test_groups, elapsed_time, log, mongoid):
             text += "Timeouts        : %d\n" % len(log['timeouts'])
             text += "Skipped         : %d\n" % len(log['skipped'])
             text += "Success         : %d\n" % len(log['success'])
-            text += "Fence Broken    : %d\n" % test_groups['fence']
             text += "Clowder Broken  : %d\n" % test_groups['clowder']
-            text += "Polyglot Broken : %d\n" % test_groups['polyglot']
             text += "Elapsed time    : %5.2f seconds\n" % elapsed_time
             if len(log['failures']) > 0:
                 text += '++++++++++++++++++++++++++++ FAILURES ++++++++++++++++++++++++++++++++\n'
@@ -209,9 +212,7 @@ def report_email(host, test_groups, elapsed_time, log, mongoid):
             text += "<tr><th align='left'>Timeouts</th><td>%d</td></tr>\n" % len(log['timeouts'])
             text += "<tr><th align='left'>Skipped</th><td>%d</td></tr>\n" % len(log['skipped'])
             text += "<tr><th align='left'>Success</th><td>%d</td></tr>\n" % len(log['success'])
-            text += "<tr><th align='left'>Fence Tests Broken</th><td>%d</td></tr>\n" % test_groups['fence']
             text += "<tr><th align='left'>Clowder Tests Broken</th><td>%d</td></tr>\n" % test_groups['clowder']
-            text += "<tr><th align='left'>Polyglot Tests Broken</th><td>%d</td></tr>\n" % test_groups['polyglot']
             text += "<tr><th align='left'>Elapsed time</th><td>%5.2f seconds</td></tr>\n" % elapsed_time
             text += "</table>\n"
             if len(log['failures']) > 0:
@@ -268,6 +269,55 @@ def report_mongo(host, test_groups, elapsed_time, log):
     else:
         return None
 
+def report_slack(host, test_groups, elapsed_time, log):
+    if slackurl:
+        message = ""
+        message += "Host            : %s\n" % host
+        message += "Server          : %s\n" % servertype
+        message += "Total Tests     : %d\n" % test_groups['total']
+        if slacknotify == 'failures' or slacknotify == 'both':
+            message += "Failures        : %d\n" % len(log['failures'])
+        message += "Errors          : %d\n" % len(log['errors'])
+        message += "Timeouts       : %d\n" % len(log['timeouts'])
+        message += "Skipped         : %d\n" % len(log['skipped'])
+        if slacknotify == 'successes' or slacknotify == 'both':
+            message += "Success         : %d\n" % len(log['success'])
+        message += "Clowder Broken  : %d\n" % test_groups['clowder']
+        message += "Elapsed time    : %5.2f seconds\n" % elapsed_time
+        message += '\n'
+
+        try:
+            requests.post(slackurl, headers={"Content-Type": "application/json"},
+                              data=json.dumps({"channel": slackchannel,
+                                               "username": slackuser,
+                                               "text": message}))
+        except Exception as e:
+            print(e)
+            raise e
+
+def report_msteam(host, test_groups, elapsed_time, log):
+    if msteamurl:
+        message = ""
+        message += "Host            : %s\n" % host
+        message += "Server          : %s\n" % servertype
+        message += "Total Tests     : %d\n" % test_groups['total']
+        if msteamnotify == 'failure' or msteamnotify == 'both':
+            message += "Failures        : %d\n" % len(log['failures'])
+        message += "Errors          : %d\n" % len(log['errors'])
+        message += "Timeouts       : %d\n" % len(log['timeouts'])
+        message += "Skipped         : %d\n" % len(log['skipped'])
+        if msteamnotify == 'successes' or msteamnotify == 'both':
+            message += "Success         : %d\n" % len(log['success'])
+        message += "Clowder Broken  : %d\n" % test_groups['clowder']
+        message += "Elapsed time    : %5.2f seconds\n" % elapsed_time
+        message += '\n'
+        try:
+            requests.post(msteamurl, headers={"Content-Type": "application/json"},
+                              data=json.dumps({"title": "clowder-test",
+                                               "text": message}))
+        except Exception as e:
+            print(e)
+            raise e
 
 def logmsg_str(logmsg):
     result = "Name       : %s\n" % logmsg['name']
@@ -312,14 +362,25 @@ if __name__ == '__main__':
 
     with open("test_extraction_data.yml", 'r') as f:
         iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
-        mongo_host = iterations['mongo']['host']
-        mongo_db = iterations['mongo']['database']
-        mongo_collection = iterations['mongo']['collection']
+        notifications = iterations['notifications']
+        if 'slack' in notifications:
+            slackurl = notifications['slack'][0]['SLACK_URL']
+            slackchannel = notifications['slack'][0]['SLACK_CHANNEL']
+            slackuser = notifications['slack'][0]['SLACK_USER']
+            slacknotify = notifications['slack'][0]['notify']
+        if 'msteams' in notifications:
+            msteamurl = notifications['msteams'][0]['MSTEAM_URL']
+            msteamnotify = notifications['msteams'][0]['notify']
 
-        mail_server = iterations['mail']['server']
-
-        servertype = iterations['server']['type']
-        requesttimeout = iterations['server']['request_timeout']
-        processingtimeout = iterations['server']['processing_timeout']
+        if 'mongo' in notifications:
+            mongo_host = notifications['mongo']['host']
+            mongo_db = notifications['mongo']['database']
+            mongo_collection = notifications['mongo']['collection']
+        if 'mail' in notifications:
+            mail_server = notifications['mail']['server']
+        if 'server' in notifications:
+            servertype = notifications['server']['type']
+            requesttimeout = notifications['server']['request_timeout']
+            processingtimeout = notifications['server']['processing_timeout']
 
     main()
