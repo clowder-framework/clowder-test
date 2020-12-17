@@ -29,6 +29,8 @@ slackurl = ""
 msteamurl = ""
 msteamnotify = ""
 
+console_notification = False
+
 def main():
     with open(args.junitxml) as fd:
         host = socket.gethostname()
@@ -98,7 +100,8 @@ def main():
             log[msgtype].append(logmsg)
 
         mongoid = report_mongo(host, test_groups, elapsed_time, log)
-        report_console(host, test_groups, elapsed_time, log, mongoid)
+        if console_notification:
+            report_console(host, test_groups, elapsed_time, log, mongoid)
         report_email(host, test_groups, elapsed_time, log, mongoid)
         if slackurl:
             report_slack(host, test_groups, elapsed_time, log)
@@ -361,6 +364,8 @@ if __name__ == '__main__':
     with open("test_extraction_data.yml", 'r') as f:
         iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
         notifications = iterations['notifications']
+        if 'console' in notifications:
+            console_notification = notifications['console'][0]['stdout']
         if 'slack' in notifications:
             slackurl = notifications['slack'][0]['slack_url']
             slackchannel = notifications['slack'][0]['slack_channel']
