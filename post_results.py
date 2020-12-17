@@ -21,7 +21,6 @@ servertype = ""
 requesttimeout = 5
 processingtimeout = 300
 
-slacktoken = ""
 slackchannel = ""
 slackuser = ""
 slacknotify = ""
@@ -101,7 +100,8 @@ def main():
         mongoid = report_mongo(host, test_groups, elapsed_time, log)
         report_console(host, test_groups, elapsed_time, log, mongoid)
         report_email(host, test_groups, elapsed_time, log, mongoid)
-        report_slack(host, test_groups, elapsed_time, log)
+        if slackurl:
+            report_slack(host, test_groups, elapsed_time, log)
         report_msteam(host, test_groups, elapsed_time, log)
 
 
@@ -115,7 +115,7 @@ def report_console(host, test_groups, elapsed_time, log, mongoid):
         message += "Total Tests     : %d\n" % test_groups['total']
         message += "Failures        : %d\n" % len(log['failures'])
         message += "Errors          : %d\n" % len(log['errors'])
-        message += "Timeouts       : %d\n" % len(log['timeouts'])
+        message += "Timeouts        : %d\n" % len(log['timeouts'])
         message += "Skipped         : %d\n" % len(log['skipped'])
         message += "Success         : %d\n" % len(log['success'])
         message += "Clowder Broken  : %d\n" % test_groups['clowder']
@@ -270,30 +270,28 @@ def report_mongo(host, test_groups, elapsed_time, log):
         return None
 
 def report_slack(host, test_groups, elapsed_time, log):
-    if slackurl:
-        message = ""
-        message += "Host            : %s\n" % host
-        message += "Server          : %s\n" % servertype
-        message += "Total Tests     : %d\n" % test_groups['total']
-        if slacknotify == 'failures' or slacknotify == 'both':
-            message += "Failures        : %d\n" % len(log['failures'])
-        message += "Errors          : %d\n" % len(log['errors'])
-        message += "Timeouts       : %d\n" % len(log['timeouts'])
-        message += "Skipped         : %d\n" % len(log['skipped'])
-        if slacknotify == 'successes' or slacknotify == 'both':
-            message += "Success         : %d\n" % len(log['success'])
-        message += "Clowder Broken  : %d\n" % test_groups['clowder']
-        message += "Elapsed time    : %5.2f seconds\n" % elapsed_time
-        message += '\n'
+    message = ""
+    message += "Host            : %s\n" % host
+    message += "Server          : %s\n" % servertype
+    message += "Total Tests     : %d\n" % test_groups['total']
+    if slacknotify == 'failures' or slacknotify == 'both':
+        message += "Failures        : %d\n" % len(log['failures'])
+    message += "Errors          : %d\n" % len(log['errors'])
+    message += "Timeouts       : %d\n" % len(log['timeouts'])
+    message += "Skipped         : %d\n" % len(log['skipped'])
+    if slacknotify == 'successes' or slacknotify == 'both':
+        message += "Success         : %d\n" % len(log['success'])
+    message += "Clowder Broken  : %d\n" % test_groups['clowder']
+    message += "Elapsed time    : %5.2f seconds\n" % elapsed_time
+    message += '\n'
 
-        try:
-            requests.post(slackurl, headers={"Content-Type": "application/json"},
-                              data=json.dumps({"channel": slackchannel,
-                                               "username": slackuser,
-                                               "text": message}))
-        except Exception as e:
-            print(e)
-            raise e
+    try:
+        requests.post(slackurl, headers={"Content-Type": "application/json"},
+                          data=json.dumps({"channel": slackchannel,
+                                           "username": slackuser,
+                                           "text": message}))
+    except Exception as e:
+        raise e
 
 def report_msteam(host, test_groups, elapsed_time, log):
     if msteamurl:
@@ -364,12 +362,12 @@ if __name__ == '__main__':
         iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
         notifications = iterations['notifications']
         if 'slack' in notifications:
-            slackurl = notifications['slack'][0]['SLACK_URL']
-            slackchannel = notifications['slack'][0]['SLACK_CHANNEL']
-            slackuser = notifications['slack'][0]['SLACK_USER']
+            slackurl = notifications['slack'][0]['slack_url']
+            slackchannel = notifications['slack'][0]['slack_channel']
+            slackuser = notifications['slack'][0]['slack_user']
             slacknotify = notifications['slack'][0]['notify']
         if 'msteams' in notifications:
-            msteamurl = notifications['msteams'][0]['MSTEAM_URL']
+            msteamurl = notifications['msteams'][0]['msteam_url']
             msteamnotify = notifications['msteams'][0]['notify']
 
         if 'mongo' in notifications:
