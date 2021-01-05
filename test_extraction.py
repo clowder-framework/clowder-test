@@ -92,8 +92,8 @@ def extract_func(host, key, input_url, extractor, request_timeout, processing_ti
 
             # Wait for the right metadata to be ready
             while stoptime > time.time():
-                r = requests.get('%sapi/files/%s/metadata.jsonld?extractor=%s' %
-                                 (host, fileid, extractor), headers={"Content-Type": "application/json"}, timeout=request_timeout)
+                r = requests.get('%sapi/files/%s/metadata.jsonld?extractor=%s&key=%s' %
+                                 (host, fileid, extractor, key), headers={"Content-Type": "application/json"}, timeout=request_timeout)
                 r.raise_for_status()
                 if r.text != '[]':
                     metadata = r.json()[0].get('content')
