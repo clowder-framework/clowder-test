@@ -52,8 +52,6 @@
             div.append("<tr><th align='left'><a href='#skipped'>Skipped</a></th><td>" + result['skipped'] + "</td></tr>");
             div.append("<tr><th align='left'><a href='#success'>Success<v/th><td>" + result['success'] + "</td></tr>");
             if (result["groups"] != null) {
-                div.append("<tr><th align='left'>Fence Broken<td>" + result['groups']['fence'] + "</td></tr>");
-                div.append("<tr><th align='left'>Polyglot Broken<td>" + result['groups']['polyglot'] + "</td></tr>");
                 div.append("<tr><th align='left'>Clowder Broken<td>" + result['groups']['clowder'] + "</td></tr>");
             }
             div.append("<tr><th align='left'>Elapsed time</th><td>" + result['time'] + " seconds</td></tr>");

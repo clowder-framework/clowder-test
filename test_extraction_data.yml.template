@@ -16,12 +16,15 @@ server:
    processing_timeout: 60
    request_timeout: 120
 
-mongo:
-  uri:
-  database:
-  collection:
-
 notifications:
+    server:
+      type:<DEV, PROD>
+      processing_timeout: 60
+      request_timeout: 120
+    mongo:
+      uri:
+      database:
+      collection:
   console:
     - stdout: true
   email:
