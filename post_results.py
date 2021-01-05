@@ -39,8 +39,12 @@ def main():
         elapsed_time = float(doc['testsuites']['testsuite']['@time'])
         log = {'errors': list(), 'failures': list(), 'timeouts': list(), 'skipped': list(), 'success': list()}
         processing_timeout = int(processingtimeout)
+        testcases = doc['testsuites']['testsuite']['testcase']
+        if not isinstance(doc['testsuites']['testsuite']['testcase'], list):
+            testcases = list()
+            testcases.append(doc['testsuites']['testsuite']['testcase'])
 
-        for testcase in doc['testsuites']['testsuite']['testcase']:
+        for testcase in testcases:
             # create log message
             logmsg = dict()
             logmsg['name'] = testcase['@name']
