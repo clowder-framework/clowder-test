@@ -17,11 +17,11 @@ server:
    request_timeout: 120
 
 notifications:
-    server:
+  server:
       type:<DEV, PROD>
       processing_timeout: 60
       request_timeout: 120
-    mongo:
+  mongo:
       uri:
       database:
       collection:
