@@ -22,7 +22,7 @@ notifications:
       processing_timeout: 60
       request_timeout: 120
   mongo:
-      uri:
+      host:
       database:
       collection:
   console:
