@@ -1,0 +1,59 @@
+# This file lists all tests. The test should have the following fields:
+# - description : what is tests
+# - file_url : url to the actual test file
+# - extractor : the id of the extractor to test (if none is specified all extractors possible are called)
+# - output : the expected output that should be found in the metadata
+#
+# It is best if the extractor will react to messages on the extractors.<extractor_id> binding/queue. This
+# will result in shorter tests, and less chance of failures (see CATS-719). This also assumes correct metadata
+# returned by extractor with id X. If this is not the case don't specify extractor, however this could lead to
+# false negatives, and longer execution times.
+
+server:
+   name: pretty name
+   host: host url of Clowder
+   key: user api key
+   processing_timeout: 60
+   request_timeout: 120
+
+notifications:
+  server:
+      type:<DEV, PROD>
+      processing_timeout: 60
+      request_timeout: 120
+  mongo:
+      host:
+      database:
+      collection:
+  console:
+    - stdout: true
+  email:
+    - name: Dev Null
+      email: devnull@ncsa.illinois.edu
+      notify: <failures,successes,both>
+  slack:
+    - name: slack
+      slack_url: https://hooks.slack.com/services/${SLACK_TOKEN}
+      slack_channel: channel name
+      slack_user: Clowder-test
+      notify: <failures,successes,both>
+  msteams:
+    - name: msteams
+      msteam_url: msteam url
+      notify: <failures,successes,both>
+
+extractors:
+  -
+    description: Test ncsa.geotiff.metadata
+    file_url: https://github.com/clowder-framework/extractors-geo/blob/master/metadata.geotiff/tests/inundation-500yr.tif?raw=true
+    extractor: ncsa.geotiff.metadata
+    output: https://raw.githubusercontent.com/clowder-framework/extractors-geo/master/metadata.geotiff/tests/inundation_output.json
+    matcher: 'dict'
+
+  -
+    description: Test ncsa.image.ocr
+    file_url: http://browndog.ncsa.illinois.edu/examples/browndog.png
+    extractor: ncsa.image.ocr
+    output: '"ocr_text": "The BrownDog project"'
+    matcher: 'str'
+
